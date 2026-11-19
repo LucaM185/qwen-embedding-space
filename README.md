@@ -42,6 +42,13 @@ space as you drag the `k` slider, leaving a trail.
   is zoomed to put its farthest reference point at the same distance; the numbers under
   each view are the unscaled values.
 
+## Heatmaps
+
+Below the plot, [`assets/leaf_heatmaps.png`](assets/leaf_heatmaps.png) shows mdbr-leaf-ir
+vectors for man − woman, king, queen, king − man + woman and apple as 24 × 32 images, after
+subtracting the mean of 1000 common English words (about 95% of each single-word vector is
+that shared component). Regenerate with `python tools/heatmaps.py`.
+
 ## Data
 
 `data/` holds a 4-bit subset of the embedding matrix (42 MB):

@@ -329,3 +329,38 @@ canvas {
 .coords-readout {
   margin-top: 0.4rem;
 }
+.heatmaps {
+  padding: 0.5rem 1.25rem 2rem;
+  border-top: 1px solid var(--border);
+}
+.heatmaps h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 1rem 0 0.75rem;
+}
+.heatmaps-body {
+  display: grid;
+  grid-template-columns: minmax(0, 640px) minmax(0, 420px);
+  gap: 1.25rem;
+  align-items: start;
+}
+.heatmaps img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.heatmaps .help {
+  margin-top: 0;
+}
+.heatmaps .help p {
+  margin: 0 0 0.75rem;
+}
+@media (max-width: 820px) {
+  .heatmaps {
+    padding: 0.5rem 1rem 1.5rem;
+  }
+  .heatmaps-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

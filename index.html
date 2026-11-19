@@ -120,6 +120,38 @@
       </section>
     </main>
 
+    <section class="heatmaps">
+      <h2>What the vectors look like</h2>
+      <div class="heatmaps-body">
+        <img
+          src="assets/leaf_heatmaps.png"
+          width="1072"
+          height="1217"
+          alt="Heatmaps of mdbr-leaf-ir vectors for man − woman, king, queen, king − man + woman and apple, each 768 values shown as a 24 by 32 grid"
+        />
+        <div class="help">
+          <p>
+            mdbr-leaf-ir vectors drawn as images: 768 values as a 24 × 32 grid, dimension
+            <i>i</i> at row <i>i</i> // 32, column <i>i</i> % 32. Blue is negative, red positive,
+            brighter means larger.
+          </p>
+          <p>
+            About 95% of every single-word vector is the same "an English word" component, so it
+            is removed first: each word has the mean of 1000 common English words subtracted.
+          </p>
+          <p>
+            The top rows are brightest in every image: the model is trained so that its first
+            dimensions carry the most information (it still works when the vector is cut short).
+            The dimension order is otherwise arbitrary, so related words do not form shapes;
+            their similarity shows in numbers instead. After centering, cosine
+            king · queen = 0.54, (king − man + woman) · queen = 0.60, but apple · king = 0.12
+            and apple · (man − woman) = −0.02.
+          </p>
+          <p>Regenerate with <code>python tools/heatmaps.py</code>.</p>
+        </div>
+      </div>
+    </section>
+
     <script type="importmap">
       {
         "imports": {
