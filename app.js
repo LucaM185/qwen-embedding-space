@@ -2,6 +2,14 @@ import { Tokenizer, Embeddings, computePlot, collectWords } from "./lib/engine.j
 import { PlotView } from "./lib/view.js";
 
 const EXAMPLES = {
+  "Gender · royalty · age": {
+    definitions: "age = old - young",
+    track: "boy + age * k",
+    k: 0,
+    axes: { x: "man - woman", y: "(king + queen) - (man + woman)", z: "old - young" },
+    labels: { x: "gender", y: "royalty", z: "age" },
+    refs: "king\nqueen\nprince\nprincess\nman\nwoman\nboy\ngirl\ngrandfather\ngrandmother",
+  },
   "Gender · familiarity · richness": {
     definitions: "gender = male - female",
     track: "mom + gender * k",
@@ -27,7 +35,7 @@ const EXAMPLES = {
     refs: "fire\nice\nsun\nsnow\nelephant\nmouse\nrocket\nturtle\nwater",
   },
 };
-const DEFAULT = "Gender · familiarity · richness";
+const DEFAULT = "Gender · royalty · age";
 const STORAGE_KEY = "qwen-embedding-space:v1";
 const MODES = { qwen: ["qwen"], leaf: ["leaf"], compare: ["qwen", "leaf"] };
 
