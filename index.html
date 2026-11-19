@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Qwen embedding space</title>
+    <meta
+      name="description"
+      content="Project Qwen3.5-2B token embeddings onto three directions you define, in the browser."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Qwen embedding space</h1>
+      <p>
+        Qwen3.5-2B input embeddings (4-bit) projected onto three directions you define.
+        Everything runs in your browser.
+      </p>
+      <div class="presets-bar">
+        <label for="preset-select">Examples</label>
+        <select id="preset-select"></select>
+        <button type="button" id="share">Copy link</button>
+      </div>
+    </header>
+
+    <main class="plot-wrap">
+      <section class="controls">
+        <label for="defs">Definitions <span class="hint">name = expr, one per line</span></label>
+        <textarea id="defs" spellcheck="false" style="min-height: 64px"></textarea>
+
+        <label for="plot-track" class="gap">Tracked expression</label>
+        <input id="plot-track" type="text" spellcheck="false" />
+
+        <div class="slider-row">
+          <div class="slider-head">
+            <label for="k">k</label>
+            <span id="k-value">1.00</span>
+          </div>
+          <input id="k" type="range" min="-3" max="3" step="0.05" value="1" />
+        </div>
+
+        <div class="axis-grid" aria-label="Axis configuration">
+          <span></span><span class="col-head">label</span><span class="col-head">direction</span>
+          <span class="tag tag-x">X</span>
+          <input id="label-x" type="text" title="Axis label" spellcheck="false" />
+          <input id="axis-x" type="text" title="Direction expression" spellcheck="false" />
+          <span class="tag tag-y">Y</span>
+          <input id="label-y" type="text" title="Axis label" spellcheck="false" />
+          <input id="axis-y" type="text" title="Direction expression" spellcheck="false" />
+          <span class="tag tag-z">Z</span>
+          <input id="label-z" type="text" title="Axis label" spellcheck="false" />
+          <input id="axis-z" type="text" title="Direction expression" spellcheck="false" />
+        </div>
+
+        <label for="refs" class="gap"
+          >Reference points <span class="hint">one per line, optional <code>label | expr</code></span></label
+        >
+        <textarea id="refs" spellcheck="false" style="min-height: 120px"></textarea>
+
+        <div class="help">
+          Coordinate = dot(vector, axis direction / ‖axis‖). A word's vector is the mean of its
+          token embeddings. Operators: <code>+ - * ( )</code>, numbers, and <code>k</code> (slider).
+          Words: ASCII letters only.
+        </div>
+      </section>
+
+      <section class="view">
+        <div class="canvas-wrap">
+          <canvas id="plot-canvas"></canvas>
+          <div id="loading" class="loading">
+            <div>Loading embeddings…</div>
+            <div class="bar"><div id="loading-bar"></div></div>
+            <div id="loading-text" class="loading-text"></div>
+          </div>
+        </div>
+        <div id="status"></div>
+        <div id="coords-readout" class="coords-readout"></div>
+        <div id="tokens" class="tokens"></div>
+        <div class="view-footer">
+          <div class="slider-row spread">
+            <div class="slider-head">
+              <label for="plot-scale">Plot spread (visual only)</label>
+              <span id="plot-scale-value">10×</span>
+            </div>
+            <input id="plot-scale" type="range" min="1" max="100" step="1" value="10" />
+          </div>
+          <div class="plot-legend">
+            <span class="dot-track">● track</span>
+            <span class="dot-ref">● reference</span>
+            <span class="dot-trail">— k trail</span>
+            <button type="button" id="clear-trail">Clear trail</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
