@@ -14,10 +14,16 @@
     <header>
       <h1>Qwen embedding space</h1>
       <p>
-        Qwen3.5-2B input embeddings (4-bit) projected onto three directions you define.
-        Everything runs in your browser.
+        Word vectors projected onto three directions you define: raw Qwen3.5-2B token
+        embeddings vs. a retrieval (RAG) embedding model. Everything runs in your browser.
       </p>
       <div class="presets-bar">
+        <label for="model-select">Model</label>
+        <select id="model-select">
+          <option value="qwen">Qwen3.5-2B tokens</option>
+          <option value="leaf">mdbr-leaf-ir (RAG)</option>
+          <option value="compare">Compare side by side</option>
+        </select>
         <label for="preset-select">Examples</label>
         <select id="preset-select"></select>
         <button type="button" id="share">Copy link</button>
@@ -59,24 +65,55 @@
         <textarea id="refs" spellcheck="false" style="min-height: 120px"></textarea>
 
         <div class="help">
-          Coordinate = dot(vector, axis direction / ‖axis‖). A word's vector is the mean of its
-          token embeddings. Operators: <code>+ - * ( )</code>, numbers, and <code>k</code> (slider).
-          Words: ASCII letters only.
+          Coordinate = dot(vector, axis direction / ‖axis‖). Operators:
+          <code>+ - * ( )</code>, numbers, <code>k</code> (slider), and quoted phrases
+          (<code>"ice cream"</code>, RAG model only).
+        </div>
+        <div class="help">
+          <b>Qwen3.5-2B tokens</b>: rows of the LLM's input embedding table (4-bit); a word is
+          the mean of its token rows, ASCII letters only.<br />
+          <b>mdbr-leaf-ir</b>: MongoDB's 23M-parameter retrieval model (Aug 2025), run with
+          transformers.js; each word or phrase goes through the full model and comes out as a
+          unit-length 768-d vector. Downloads ~46 MB (fp16) from Hugging Face on first use.
         </div>
       </section>
 
       <section class="view">
-        <div class="canvas-wrap">
-          <canvas id="plot-canvas"></canvas>
-          <div id="loading" class="loading">
-            <div>Loading embeddings…</div>
-            <div class="bar"><div id="loading-bar"></div></div>
-            <div id="loading-text" class="loading-text"></div>
+        <div id="views" class="views">
+          <div class="panel" data-model="qwen">
+            <div class="panel-title">Qwen3.5-2B token embeddings</div>
+            <div class="canvas-wrap">
+              <canvas></canvas>
+              <div class="loading">
+                <div class="loading-label">Loading embeddings…</div>
+                <div class="bar"><div class="loading-bar"></div></div>
+                <div class="loading-text"></div>
+              </div>
+            </div>
+            <div class="panel-error"></div>
+            <div class="coords-readout"></div>
+            <div class="tokens"></div>
+          </div>
+          <div class="panel" data-model="leaf">
+            <div class="panel-title">mdbr-leaf-ir (retrieval model)</div>
+            <div class="canvas-wrap">
+              <canvas></canvas>
+              <div class="loading">
+                <div class="loading-label">Loading model…</div>
+                <div class="bar"><div class="loading-bar"></div></div>
+                <div class="loading-text"></div>
+              </div>
+            </div>
+            <div class="panel-error"></div>
+            <div class="coords-readout"></div>
+            <div class="tokens"></div>
           </div>
         </div>
+        <div id="compare-note" class="help">
+          Side by side, each view is scaled so its farthest reference point sits at the same
+          distance: compare shapes, and read the numbers below each view for actual values.
+        </div>
         <div id="status"></div>
-        <div id="coords-readout" class="coords-readout"></div>
-        <div id="tokens" class="tokens"></div>
         <div class="view-footer">
           <div class="slider-row spread">
             <div class="slider-head">
@@ -99,7 +136,8 @@
       {
         "imports": {
           "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+          "@huggingface/transformers": "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.1/+esm"
         }
       }
     </script>

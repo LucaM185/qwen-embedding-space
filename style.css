@@ -42,8 +42,10 @@ header p {
 .presets-bar {
   margin-left: auto;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   align-items: center;
+  min-width: 0;
 }
 .presets-bar label {
   margin: 0;
@@ -199,7 +201,7 @@ button:hover {
 .canvas-wrap {
   position: relative;
 }
-#plot-canvas {
+canvas {
   width: 100%;
   height: min(70vh, 640px);
   min-height: 300px;
@@ -208,6 +210,9 @@ button:hover {
   background: #0a0c10;
   display: block;
   touch-action: none;
+}
+.views.compare canvas {
+  height: min(62vh, 560px);
 }
 .loading {
   position: absolute;
@@ -232,7 +237,7 @@ button:hover {
   background: var(--border);
   overflow: hidden;
 }
-#loading-bar {
+.loading-bar {
   height: 100%;
   width: 0;
   background: var(--accent);
@@ -294,4 +299,40 @@ button:hover {
 }
 .dot-trail {
   color: var(--accent3);
+}
+
+.views {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+.views.compare {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 1100px) {
+  .views.compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.panel[hidden] {
+  display: none;
+}
+.panel-title {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+.views:not(.compare) .panel-title {
+  display: none;
+}
+.panel-error {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
+.panel-error:empty {
+  display: none;
+}
+.coords-readout {
+  margin-top: 0.4rem;
 }
