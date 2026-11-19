@@ -143,9 +143,27 @@
             The top rows are brightest in every image: the model is trained so that its first
             dimensions carry the most information (it still works when the vector is cut short).
             The dimension order is otherwise arbitrary, so related words do not form shapes;
-            their similarity shows in numbers instead. After centering, cosine
-            king · queen = 0.54, (king − man + woman) · queen = 0.60, but apple · king = 0.12
-            and apple · (man − woman) = −0.02.
+            their similarity shows in numbers instead:
+          </p>
+          <table class="sim-table">
+            <caption>king − man + woman against the other vectors (after centering)</caption>
+            <thead>
+              <tr><th scope="col">vs</th><th scope="col">dot product</th><th scope="col">cosine</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">man − woman</th><td>−0.067</td><td>−0.60</td></tr>
+              <tr><th scope="row">king</th><td>+0.094</td><td>+0.73</td></tr>
+              <tr><th scope="row">queen</th><td>+0.099</td><td>+0.60</td></tr>
+              <tr><th scope="row">woman</th><td>+0.062</td><td>+0.51</td></tr>
+              <tr><th scope="row">apple</th><td>+0.020</td><td>+0.11</td></tr>
+              <tr><th scope="row">man</th><td>−0.005</td><td>−0.04</td></tr>
+              <tr><th scope="row">itself (‖v‖²)</th><td>+0.161</td><td>1</td></tr>
+            </tbody>
+          </table>
+          <p>
+            By dot product queen edges out king; by cosine king wins, because the centered
+            queen vector is longer. Without centering every word scores 0.84–0.96 cosine
+            against king − man + woman, apple included.
           </p>
           <p>Regenerate with <code>python tools/heatmaps.py</code>.</p>
         </div>

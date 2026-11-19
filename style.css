@@ -364,3 +364,39 @@ canvas {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.sim-table {
+  border-collapse: collapse;
+  margin: 0 0 0.85rem;
+  font-size: 0.8rem;
+  min-width: min(100%, 300px);
+}
+.sim-table caption {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-bottom: 0.35rem;
+}
+.sim-table th,
+.sim-table td {
+  padding: 0.28rem 0.6rem 0.28rem 0;
+  border-bottom: 1px solid #222833;
+  text-align: left;
+}
+.sim-table thead th {
+  color: var(--muted);
+  font-weight: 500;
+}
+.sim-table tbody th {
+  color: var(--text);
+  font-weight: 400;
+  font-family: var(--mono);
+}
+.sim-table td {
+  font-family: var(--mono);
+  color: var(--accent);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.sim-table thead th:not(:first-child) {
+  text-align: right;
+}
