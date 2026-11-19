@@ -1,0 +1,16 @@
+{
+ "model_id": "Qwen/Qwen3.5-2B",
+ "input": "Word: <word>",
+ "pooling": "hidden state at the word's last token",
+ "words": 102,
+ "dim": 2048,
+ "num_layers": 24,
+ "layers": {
+  "12": {
+   "file": "L12.f32.bin"
+  },
+  "24": {
+   "file": "L24.f32.bin"
+  }
+ }
+}

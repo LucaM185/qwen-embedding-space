@@ -212,7 +212,8 @@ canvas {
   touch-action: none;
 }
 .views.compare canvas {
-  height: min(62vh, 560px);
+  height: min(46vh, 420px);
+  min-height: 260px;
 }
 .loading {
   position: absolute;
@@ -307,12 +308,7 @@ canvas {
   gap: 1rem;
 }
 .views.compare {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-@media (max-width: 1100px) {
-  .views.compare {
-    grid-template-columns: minmax(0, 1fr);
-  }
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
 }
 .panel[hidden] {
   display: none;
@@ -321,9 +317,6 @@ canvas {
   font-size: 0.78rem;
   color: var(--muted);
   margin-bottom: 0.4rem;
-}
-.views:not(.compare) .panel-title {
-  display: none;
 }
 .panel-error {
   margin-top: 0.4rem;

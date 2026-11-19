@@ -3,15 +3,19 @@
 Interactive 3D view of word vectors, running entirely in the browser:
 **live demo → <https://lucam185.github.io/qwen-embedding-space/>**
 
-Two kinds of embeddings, switchable or side by side:
+Several embedding spaces, one at a time or side by side (cameras move together). By default
+all four are shown: Qwen layer 0 (token table), layer 12, layer 24, and the RAG model.
 
-| model | what a word's vector is | size |
+| space | what a word's vector is | size |
 |---|---|---|
-| [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) token embeddings | the LLM's input embedding rows (4-bit), averaged over the word's tokens; 2048-d | 42 MB, in this repo |
+| Qwen layer 0 (token table) | rows of [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B)'s input embedding table (4-bit), averaged over the word's tokens; any ASCII word; 2048-d | 42 MB |
+| Qwen layer 12 / 24 | Qwen3.5-2B's hidden state for `Word: <word>` halfway through (layer 12 of 24) and after the last layer; precomputed for a list of ~100 words, other words are left out of these two views; 2048-d | 0.8 MB per layer |
 | [MongoDB/mdbr-leaf-ir](https://huggingface.co/MongoDB/mdbr-leaf-ir) | output of a 23M-parameter retrieval (RAG) model, run with [transformers.js](https://huggingface.co/docs/transformers.js); 768-d, unit length | 46 MB fp16, fetched from Hugging Face on first use |
 
-The first is what an LLM sees before any layer runs; the second is a model trained so that
-related texts land close together, which is what RAG search uses.
+The token table and layer 0 are what an LLM sees before any processing; layers 12 and 24 show
+what it has built from the word by then; the retrieval model is trained so that related
+texts land close together, which is what RAG search uses. Each file is downloaded only when
+a view that needs it is shown.
 
 You define three directions with word arithmetic (for example `friend - stranger`,
 `male - female`, `rich - poor`). Every word or expression is placed at its projection on
@@ -29,9 +33,14 @@ space as you drag the `k` slider, leaving a trail.
   on projections; the int8 one was off by ~0.04, so it is not used.
 - **Expressions.** `+ - * ( )`, numbers, `k` (the slider), quoted words or phrases, and
   named definitions (`gender = male - female`).
-- **Side by side.** The two models live on very different scales, so each view is scaled to
-  put its farthest reference point at the same distance; the numbers under each view are
-  the unscaled values.
+- **Words (Qwen layers 12 / 24).** Each word is run through Qwen3.5-2B as `Word: <word>`
+  (the prefix keeps the word off position 0, where LLMs park huge "attention sink"
+  activations) and the hidden state at the word's last token, which has seen the whole word,
+  is kept. Only words in [`data/layers/words.json`](data/layers/words.json) are available
+  (case-insensitive); edit the list in `tools/export_layers.py` and re-run it to change it.
+- **Zoom.** The spaces differ in scale by up to ~250× (layer 0 vs layer 24), so every view
+  is zoomed to put its farthest reference point at the same distance; the numbers under
+  each view are the unscaled values.
 
 ## Data
 
@@ -52,11 +61,15 @@ strings).
 Quantization error: mean cosine similarity between the original and 4-bit rows is 0.995,
 and projections differ from full precision by less than 0.01 on the default example.
 
+`data/layers/` holds `words.json` and one float32 file per layer (`L12.f32.bin`, `L24.f32.bin`).
+
 To regenerate:
 
 ```bash
 pip install numpy huggingface_hub
 python tools/export.py --out data
+pip install "transformers>=5" torch
+python tools/export_layers.py --out data/layers
 ```
 
 ## Run locally

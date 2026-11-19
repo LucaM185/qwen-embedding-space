@@ -14,16 +14,12 @@
     <header>
       <h1>Qwen embedding space</h1>
       <p>
-        Word vectors projected onto three directions you define: raw Qwen3.5-2B token
-        embeddings vs. a retrieval (RAG) embedding model. Everything runs in your browser.
+        Word vectors projected onto three directions you define: Qwen3.5-2B at different
+        depths vs. a retrieval (RAG) embedding model. Everything runs in your browser.
       </p>
       <div class="presets-bar">
         <label for="model-select">Model</label>
-        <select id="model-select">
-          <option value="qwen">Qwen3.5-2B tokens</option>
-          <option value="leaf">mdbr-leaf-ir (RAG)</option>
-          <option value="compare">Compare side by side</option>
-        </select>
+        <select id="model-select"></select>
         <label for="preset-select">Examples</label>
         <select id="preset-select"></select>
         <button type="button" id="share">Copy link</button>
@@ -70,8 +66,12 @@
           (<code>"ice cream"</code>, RAG model only).
         </div>
         <div class="help">
-          <b>Qwen3.5-2B tokens</b>: rows of the LLM's input embedding table (4-bit); a word is
-          the mean of its token rows, ASCII letters only.<br />
+          <b>Qwen layer 0</b>: rows of the LLM's input embedding table (4-bit); a word is the
+          mean of its token rows. Any word made of ASCII letters.<br />
+          <b>Qwen layers 12 / 24</b>: Qwen3.5-2B's hidden state for <code>Word: &lt;word&gt;</code>
+          halfway through (layer 12 of 24) and after the last layer, at the word's last token.
+          Precomputed for a list of ~100 words (<a href="data/layers/words.json">see list</a>);
+          other words are left out of these two views only.<br />
           <b>mdbr-leaf-ir</b>: MongoDB's 23M-parameter retrieval model (Aug 2025), run with
           transformers.js; each word or phrase goes through the full model and comes out as a
           unit-length 768-d vector. Downloads ~46 MB (fp16) from Hugging Face on first use.
@@ -79,13 +79,14 @@
       </section>
 
       <section class="view">
-        <div id="views" class="views">
-          <div class="panel" data-model="qwen">
-            <div class="panel-title">Qwen3.5-2B token embeddings</div>
+        <div id="views" class="views"></div>
+        <template id="panel-template">
+          <div class="panel">
+            <div class="panel-title"></div>
             <div class="canvas-wrap">
               <canvas></canvas>
               <div class="loading">
-                <div class="loading-label">Loading embeddings…</div>
+                <div class="loading-label">Loading…</div>
                 <div class="bar"><div class="loading-bar"></div></div>
                 <div class="loading-text"></div>
               </div>
@@ -94,24 +95,11 @@
             <div class="coords-readout"></div>
             <div class="tokens"></div>
           </div>
-          <div class="panel" data-model="leaf">
-            <div class="panel-title">mdbr-leaf-ir (retrieval model)</div>
-            <div class="canvas-wrap">
-              <canvas></canvas>
-              <div class="loading">
-                <div class="loading-label">Loading model…</div>
-                <div class="bar"><div class="loading-bar"></div></div>
-                <div class="loading-text"></div>
-              </div>
-            </div>
-            <div class="panel-error"></div>
-            <div class="coords-readout"></div>
-            <div class="tokens"></div>
-          </div>
-        </div>
+        </template>
         <div id="compare-note" class="help">
-          Side by side, each view is scaled so its farthest reference point sits at the same
-          distance: compare shapes, and read the numbers below each view for actual values.
+          Each view is zoomed so its farthest reference point sits at the same distance (the
+          spaces differ in scale by up to ~250×): compare shapes, and read the numbers below
+          each view for the actual values.
         </div>
         <div id="status"></div>
         <div class="view-footer">

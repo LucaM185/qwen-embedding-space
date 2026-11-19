@@ -1,4 +1,4 @@
-import { Tokenizer, Embeddings, computePlot, collectWords } from "./lib/engine.js";
+import { Tokenizer, WordTable, DenseWords, Embeddings, computePlot, collectWords } from "./lib/engine.js";
 import { PlotView } from "./lib/view.js";
 
 const EXAMPLES = {
@@ -37,7 +37,24 @@ const EXAMPLES = {
 };
 const DEFAULT = "Gender · royalty · age";
 const STORAGE_KEY = "qwen-embedding-space:v1";
-const MODES = { qwen: ["qwen"], leaf: ["leaf"], compare: ["qwen", "leaf"] };
+// Every embedding space the page can show.
+const SPACES = {
+  table: { title: "Qwen layer 0 · token table (any word)", loading: "Loading embeddings…" },
+  l12: { title: "Qwen layer 12 (middle) · word list only", loading: "Loading layer 12…", layer: 12 },
+  l24: { title: "Qwen layer 24 (final) · word list only", loading: "Loading layer 24…", layer: 24 },
+  leaf: { title: "mdbr-leaf-ir (retrieval model, any text)", loading: "Loading model…" },
+};
+const MODES = {
+  all: { label: "Compare all: Qwen layers 0 · 12 · 24 + RAG", spaces: ["table", "l12", "l24", "leaf"] },
+  layers: { label: "Compare Qwen layers 0 · 12 · 24", spaces: ["table", "l12", "l24"] },
+  "table-leaf": { label: "Compare Qwen layer 0 vs RAG", spaces: ["table", "leaf"] },
+  table: { label: "Qwen layer 0 (token table)", spaces: ["table"] },
+  l12: { label: "Qwen layer 12 (middle)", spaces: ["l12"] },
+  l24: { label: "Qwen layer 24 (final)", spaces: ["l24"] },
+  leaf: { label: "mdbr-leaf-ir (RAG)", spaces: ["leaf"] },
+};
+const LEGACY_MODES = { qwen: "table", compare: "table-leaf" };
+const DEFAULT_MODE = "all";
 
 const $ = (id) => document.getElementById(id);
 const el = {
@@ -58,13 +75,28 @@ const el = {
   views: $("views"),
 };
 
+for (const [value, mode] of Object.entries(MODES)) {
+  const opt = document.createElement("option");
+  opt.value = value;
+  opt.textContent = mode.label;
+  el.model.appendChild(opt);
+}
+el.model.value = DEFAULT_MODE;
+
 const visualScale = () => parseFloat(el.scale.value);
 const fmt = (v) => Number(v || 0).toFixed(3);
 
-// --- Panels: one view per model --------------------------------------------------
+// --- Panels: one view per space ----------------------------------------------------
 const panels = {};
-for (const node of document.querySelectorAll(".panel")) {
+const template = $("panel-template");
+for (const [name, space] of Object.entries(SPACES)) {
+  const node = template.content.firstElementChild.cloneNode(true);
+  node.dataset.space = name;
+  node.hidden = true;
+  el.views.appendChild(node);
   const q = (sel) => node.querySelector(sel);
+  q(".panel-title").textContent = space.title;
+  q(".loading-label").textContent = space.loading;
   const panel = {
     node,
     view: new PlotView(q("canvas")),
@@ -74,14 +106,13 @@ for (const node of document.querySelectorAll(".panel")) {
     error: q(".panel-error"),
     coords: q(".coords-readout"),
     tokens: q(".tokens"),
-    backend: null,
     loadPromise: null,
   };
   q("canvas").addEventListener("pointerdown", () => (activePanel = panel));
   q("canvas").addEventListener("wheel", () => (activePanel = panel), { passive: true });
-  panels[node.dataset.model] = panel;
+  panels[name] = panel;
 }
-let activePanel = panels.qwen;
+let activePanel = panels.table;
 
 function showProgress(panel, loaded, total) {
   panel.loadingBar.style.width = `${((loaded / total) * 100).toFixed(1)}%`;
@@ -109,8 +140,34 @@ async function fetchWithProgress(url, total, onProgress) {
   return out.buffer.slice(0, got);
 }
 
-const loaders = {
-  async qwen(panel) {
+let layerShared = null; // promise of { meta, table } shared by all precomputed layers
+function loadLayerShared() {
+  const json = (url) =>
+    fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+      return r.json();
+    });
+  layerShared ??= Promise.all([json("data/layers/meta.json"), json("data/layers/words.json")]).then(
+    ([meta, words]) => ({ meta, table: new WordTable(words, meta.words) }),
+    (err) => {
+      layerShared = null; // allow a retry
+      throw err;
+    }
+  );
+  return layerShared;
+}
+
+async function loadLayer(panel, layer) {
+  const { meta, table } = await loadLayerShared();
+  const info = meta.layers[String(layer)];
+  const total = meta.words * meta.dim * 4;
+  const buf = await fetchWithProgress(`data/layers/${info.file}`, total, (a, b) => showProgress(panel, a, b));
+  if (buf.byteLength !== total) throw new Error("Layer file size mismatch");
+  return new DenseWords(buf, meta.dim, table);
+}
+
+async function loadBackend(name, panel) {
+  if (name === "table") {
     const [meta, tok] = await Promise.all([
       fetch("data/meta.json").then((r) => r.json()),
       fetch("data/tokenizer.json").then((r) => r.json()),
@@ -119,18 +176,18 @@ const loaders = {
     const buf = await fetchWithProgress("data/embed.q4.bin", total, (a, b) => showProgress(panel, a, b));
     if (buf.byteLength !== total) throw new Error("Embedding file size mismatch");
     return new Embeddings(buf, meta, new Tokenizer(tok));
-  },
-  async leaf(panel) {
+  }
+  if (name === "leaf") {
     const { LeafEmbeddings } = await import("./lib/leaf.js");
     return LeafEmbeddings.load((a, b) => showProgress(panel, a, b));
-  },
-};
+  }
+  return loadLayer(panel, SPACES[name].layer);
+}
 
 function ensureBackend(name) {
   const panel = panels[name];
-  panel.loadPromise ??= loaders[name](panel).then(
+  panel.loadPromise ??= loadBackend(name, panel).then(
     (backend) => {
-      panel.backend = backend;
       panel.loading.classList.add("hidden");
       return backend;
     },
@@ -159,7 +216,8 @@ function collect() {
 
 function apply(s) {
   if (!s) return;
-  if (s.model && MODES[s.model]) el.model.value = s.model;
+  const mode = LEGACY_MODES[s.model] || s.model;
+  if (mode && MODES[mode]) el.model.value = mode;
   if (s.definitions != null) el.defs.value = s.definitions;
   if (s.track != null) el.track.value = s.track;
   if (s.k != null) el.k.value = String(s.k);
@@ -229,12 +287,11 @@ function initialState() {
 }
 
 // --- Compute ------------------------------------------------------------------
-const activeModels = () => MODES[el.model.value] || MODES.qwen;
+const activeModels = () => (MODES[el.model.value] || MODES[DEFAULT_MODE]).spaces;
 
-// In compare mode the two models live on very different scales, so each view is
-// rescaled to put its farthest reference point at the same on-screen distance.
+// The spaces differ in scale by up to ~250x (layer 0 vs layer 24), so every view is
+// zoomed to put its farthest reference point at the same on-screen distance.
 function panelScale(plot) {
-  if (activeModels().length < 2) return visualScale();
   const pts = plot.references.length ? plot.references.map((r) => r.coords) : [plot.track.coords];
   const m = Math.max(1e-6, ...pts.flatMap((c) => [c.x, c.y, c.z].map((v) => Math.abs(v || 0))));
   return (visualScale() * 0.5) / m;
@@ -280,7 +337,12 @@ async function run({ resetTrail = false } = {}) {
         if (seq !== runSeq) return;
         const plot = computePlot(backend, cfg);
         renderPanel(panel, plot, cfg, true);
-        panel.error.textContent = plot.skipped.length ? `Skipped — ${plot.skipped.join(" · ")}` : "";
+        const notListed = plot.skipped.filter((m) => /-word list$/.test(m)).map((m) => m.split(":")[0]);
+        const other = plot.skipped.filter((m) => !/-word list$/.test(m));
+        panel.error.textContent = [
+          notListed.length ? `Not in the word list, hidden here: ${notListed.join(", ")}` : "",
+          other.length ? `Skipped — ${other.join(" · ")}` : "",
+        ].filter(Boolean).join(" · ");
       } catch (err) {
         if (seq !== runSeq) return;
         panel.error.textContent = err.message;
@@ -305,7 +367,6 @@ function applyMode() {
   const active = activeModels();
   for (const [name, panel] of Object.entries(panels)) panel.node.hidden = !active.includes(name);
   el.views.classList.toggle("compare", active.length > 1);
-  $("compare-note").hidden = active.length < 2;
   if (!active.includes(Object.keys(panels).find((n) => panels[n] === activePanel))) {
     activePanel = panels[active[0]];
   }
@@ -349,7 +410,7 @@ el.share.addEventListener("click", async () => {
   setTimeout(() => (el.share.textContent = "Copy link"), 1500);
 });
 
-// In compare mode the two cameras move together: the one last touched leads.
+// In compare modes all cameras move together: the view last touched leads.
 function animate() {
   requestAnimationFrame(animate);
   const active = activeModels().map((n) => panels[n]);
